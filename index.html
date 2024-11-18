@@ -89,7 +89,7 @@
 
             imgParts.forEach((partCanvas, index) => {
                 const imgData = partCanvas.toDataURL("image/png");
-                pdf.addImage(imgData, "PNG", x, y, 10, 10);
+                pdf.addImage(imgData, "PNG", x, y, 75, 75);
                 x += 12; // Move to the next position
                 if (x > 180) { // New line if it exceeds page width
                     x = 10;
