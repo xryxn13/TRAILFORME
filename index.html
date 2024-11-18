@@ -3,189 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bindi Portrait Maker</title>
+    <title>Image Cutter and PDF Generator</title>
     <style>
-        /* Add the same CSS as before */
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 20px;
+        }
+        #canvas {
+            border: 1px solid #000;
+            margin-top: 20px;
+        }
+        .part {
+            display: inline-block;
+            margin: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #saveBtn {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <img src="ccllogo.jpg" alt="CCL Logo">
-    <h1>CCL : Bindi Portrait Maker</h1>
-</div>
-
-<div id="controls">
-    <input type="file" id="imageInput" accept="image/*">
-    <br>
-    <label for="widthInput">Width:</label>
-    <input type="number" id="widthInput" value="50" min="1" step="1">
-    <label for="heightInput">Height:</label>
-    <input type="number" id="heightInput" value="50" min="1" step="1">
-    <br>
-    <button id="makeMosaicButton">Make Bindi Art</button>
-</div>
-
-<br>
-<canvas id="outputCanvas"></canvas>
-<br>
-<button id="downloadButton">Download Image</button>
-<button id="downloadPDFButton" style="display:none;">Download PDF</button>
-
-<div class="footer">
-    <p>© 2024 Center for Creative Learning, IIT Gandhinagar</p>
-</div>
+<h1>Image Cutter and PDF Generator</h1>
+<input type="file" id="imageInput" accept="image/*">
+<br><br>
+<canvas id="canvas" width="100" height="100"></canvas>
+<br><br>
+<button id="cutBtn">Cut Image</button>
+<button id="saveBtn" style="display: none;">Save as PDF</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
 <script>
-    let numDiceWide = 50;
-    let numDiceTall = 50;
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const imageInput = document.getElementById('imageInput');
+    const cutBtn = document.getElementById('cutBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    let image = new Image();
+    let parts = [];
 
-    const diceImages = {
-        1: "BINDI/5.png",
-        2: "BINDI/4.png",
-        3: "BINDI/3.png",
-        4: "BINDI/2.png",
-        5: "BINDI/1.png",
-    };
-
-    const outputCanvas = document.getElementById('outputCanvas');
-    const ctx = outputCanvas.getContext('2d');
-    const downloadButton = document.getElementById('downloadButton');
-    const downloadPDFButton = document.getElementById('downloadPDFButton');
-
-    function greyscaleToDiceValue(val) {
-        if (val < 51) return 1;
-        else if (val < 102) return 2;
-        else if (val < 153) return 3;
-        else if (val < 204) return 4;
-        return 5;
-    }
-
-    async function drawDiceImage(pixels, diceWidth, diceHeight) {
-        const outputWidth = diceWidth * numDiceWide;
-        const outputHeight = diceHeight * numDiceTall;
-        outputCanvas.width = outputWidth;
-        outputCanvas.height = outputHeight;
-
-        for (let i = 0; i < pixels.length; i++) {
-            const grayscaleValue = pixels[i];
-            const diceValue = greyscaleToDiceValue(grayscaleValue);
-            const x = (i % numDiceWide) * diceWidth;
-            const y = Math.floor(i / numDiceWide) * diceHeight;
-
-            const img = new Image();
-            img.src = diceImages[diceValue];
-
-            await new Promise(resolve => {
-                img.onload = () => {
-                    ctx.drawImage(img, x, y, diceWidth, diceHeight);
-                    resolve();
-                };
-            });
-        }
-
-        downloadButton.style.display = 'inline-block';
-        downloadPDFButton.style.display = 'inline-block'; // Show the PDF download button
-    }
-
-    document.getElementById('makeMosaicButton').addEventListener('click', function () {
-        const file = document.getElementById('imageInput').files[0];
-        if (file) {
-            numDiceWide = parseInt(document.getElementById('widthInput').value, 10);
-            numDiceTall = parseInt(document.getElementById('heightInput').value, 10);
-
-            const img = new Image();
-            const reader = new FileReader();
-
-            reader.onload = function (e) {
-                img.src = e.target.result;
-                img.onload = function () {
-                    const offscreenCanvas = document.createElement('canvas');
-                    const offscreenCtx = offscreenCanvas.getContext('2d');
-                    offscreenCanvas.width = numDiceWide;
-                    offscreenCanvas.height = numDiceTall;
-                    offscreenCtx.drawImage(img, 0, 0, numDiceWide, numDiceTall);
-
-                    const imageData = offscreenCtx.getImageData(0, 0, numDiceWide, numDiceTall);
-                    const pixels = [];
-                    for (let i = 0; i < imageData.data.length; i += 4) {
-                        const r = imageData.data[i];
-                        const g = imageData.data[i + 1];
-                        const b = imageData.data[i + 2];
-                        const grayscaleValue = Math.floor((r + g + b) / 3);
-                        pixels.push(grayscaleValue);
-                    }
-
-                    const diceImage = new Image();
-                    diceImage.src = diceImages[1];
-                    diceImage.onload = function () {
-                        const diceWidth = diceImage.width;
-                        const diceHeight = diceImage.height;
-                        drawDiceImage(pixels, diceWidth, diceHeight);
-                    };
-                };
+    // Load the image when selected
+    imageInput.addEventListener('change', (e) => {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            image.onload = function() {
+                // Resize the image to 100x100
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(image, 0, 0, 100, 100);
             };
-            reader.readAsDataURL(file);
-        } else {
-            alert("Please select an image file.");
+            image.src = event.target.result;
+        };
+        reader.readAsDataURL(e.target.files[0]);
+    });
+
+    // Function to cut the image into 10x10 parts
+    cutBtn.addEventListener('click', () => {
+        const rows = 10; // 10 parts vertically
+        const cols = 10; // 10 parts horizontally
+        const width = canvas.width / cols;
+        const height = canvas.height / rows;
+        parts = []; // Clear previous parts
+
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const x = col * width;
+                const y = row * height;
+                const imageData = ctx.getImageData(x, y, width, height);
+                parts.push({ x, y, imageData });
+                const partCanvas = document.createElement('canvas');
+                partCanvas.width = width;
+                partCanvas.height = height;
+                const partCtx = partCanvas.getContext('2d');
+                partCtx.putImageData(imageData, 0, 0);
+
+                const partImg = new Image();
+                partImg.src = partCanvas.toDataURL();
+                partImg.onload = () => {
+                    const partDiv = document.createElement('div');
+                    partDiv.classList.add('part');
+                    partDiv.appendChild(partImg);
+                    document.body.appendChild(partDiv);
+                };
+            }
         }
+        saveBtn.style.display = 'inline-block';
     });
 
-    downloadButton.addEventListener('click', function () {
-        const link = document.createElement('a');
-        link.download = 'dice_output.png';
-        link.href = outputCanvas.toDataURL('image/png');
-        link.click();
-    });
-
-    downloadPDFButton.addEventListener('click', function () {
+    // Function to generate and download the PDF
+    saveBtn.addEventListener('click', () => {
         const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF();
-        
-        const canvasWidth = outputCanvas.width;
-        const canvasHeight = outputCanvas.height;
-        const cutSize = 10; // 10x10 pixel cuts
-        let currentPage = 1; // Track the current page number
-        let xPos = 0;
-        let yPos = 0;
+        const doc = new jsPDF();
+        parts.forEach((part, index) => {
+            const imgData = part.imageData;
+            const imgCanvas = document.createElement('canvas');
+            imgCanvas.width = imgData.width;
+            imgCanvas.height = imgData.height;
+            const imgCtx = imgCanvas.getContext('2d');
+            imgCtx.putImageData(imgData, 0, 0);
+            const imgSrc = imgCanvas.toDataURL();
 
-        function addCanvasToPDF(x, y) {
-            const imgData = outputCanvas.toDataURL('image/png', x, y, cutSize, cutSize);
-            pdf.addImage(imgData, 'PNG', 10, 10, 30, 30);
-            if ((x / cutSize + 1) % 5 === 0) {
-                pdf.addPage();
-                currentPage++;
-            }
-        }
+            if (index > 0) doc.addPage(); // Add a new page for each image part
+            doc.addImage(imgSrc, 'PNG', 10, 10, 180, 180);
+        });
 
-        function generatePDF() {
-            let chunkIndex = 0;
-
-            function processChunk() {
-                const totalChunks = Math.ceil(canvasHeight / cutSize) * Math.ceil(canvasWidth / cutSize);
-                const currentRow = Math.floor(chunkIndex / Math.ceil(canvasWidth / cutSize));
-                const currentCol = chunkIndex % Math.ceil(canvasWidth / cutSize);
-
-                const x = currentCol * cutSize;
-                const y = currentRow * cutSize;
-
-                addCanvasToPDF(x, y);
-                chunkIndex++;
-
-                // If not done, continue processing after a small delay
-                if (chunkIndex < totalChunks) {
-                    setTimeout(processChunk, 50); // Set a small timeout to give the browser time to render
-                } else {
-                    pdf.save('dice_output.pdf');
-                }
-            }
-
-            processChunk(); // Start processing the chunks
-        }
-
-        generatePDF(); // Start generating the PDF
+        doc.save('image-parts.pdf');
     });
 </script>
 
