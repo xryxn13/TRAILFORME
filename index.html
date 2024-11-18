@@ -147,36 +147,45 @@
         const canvasWidth = outputCanvas.width;
         const canvasHeight = outputCanvas.height;
         const cutSize = 10; // 10x10 pixel cuts
-
         let currentPage = 1; // Track the current page number
+        let xPos = 0;
+        let yPos = 0;
 
-        async function addCanvasToPDF(x, y) {
+        function addCanvasToPDF(x, y) {
             const imgData = outputCanvas.toDataURL('image/png', x, y, cutSize, cutSize);
             pdf.addImage(imgData, 'PNG', 10, 10, 30, 30);
-            // Add a new page after 5 chunks (or after a certain number of chunks per row)
             if ((x / cutSize + 1) % 5 === 0) {
                 pdf.addPage();
                 currentPage++;
             }
         }
 
-        async function generatePDF() {
-            let yPos = 0;
-            let xPos = 0;
-            
-            // Loop through the canvas and add chunks
-            for (let y = 0; y < canvasHeight; y += cutSize) {
-                for (let x = 0; x < canvasWidth; x += cutSize) {
-                    await addCanvasToPDF(x, y);
+        function generatePDF() {
+            let chunkIndex = 0;
+
+            function processChunk() {
+                const totalChunks = Math.ceil(canvasHeight / cutSize) * Math.ceil(canvasWidth / cutSize);
+                const currentRow = Math.floor(chunkIndex / Math.ceil(canvasWidth / cutSize));
+                const currentCol = chunkIndex % Math.ceil(canvasWidth / cutSize);
+
+                const x = currentCol * cutSize;
+                const y = currentRow * cutSize;
+
+                addCanvasToPDF(x, y);
+                chunkIndex++;
+
+                // If not done, continue processing after a small delay
+                if (chunkIndex < totalChunks) {
+                    setTimeout(processChunk, 50); // Set a small timeout to give the browser time to render
+                } else {
+                    pdf.save('dice_output.pdf');
                 }
             }
 
-            // After processing all chunks, save the PDF
-            pdf.save('dice_output.pdf');
+            processChunk(); // Start processing the chunks
         }
 
-        // Start generating the PDF
-        generatePDF();
+        generatePDF(); // Start generating the PDF
     });
 </script>
 
