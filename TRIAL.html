@@ -1,0 +1,965 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dice Rotation Grid</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(10, 100px);
+            grid-template-rows: repeat(10, 100px);
+            gap: 2px;
+        }
+
+        .cell {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            transform-style: preserve-3d;
+            animation-duration: 2s;
+            animation-fill-mode: forwards;
+        }
+
+        .face {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background-color: black;
+            border: 2px solid white;
+        }
+
+        .dot {
+            position: absolute;
+            width: 19px;
+            height: 19px;
+            background-color: white;
+            border-radius: 50%;
+        }
+
+        /* Dice faces positioning */
+        .face-1 { transform: rotateY(0deg) translateZ(50px); }   /* Front */
+        .face-6 { transform: rotateY(180deg) translateZ(50px); } /* Back */
+        .face-2 { transform: rotateY(90deg) translateZ(50px); }  /* Right */
+        .face-5 { transform: rotateY(-90deg) translateZ(50px); } /* Left */
+        .face-3 { transform: rotateX(90deg) translateZ(50px); }  /* Top */
+        .face-4 { transform: rotateX(-90deg) translateZ(50px); } /* Bottom */
+
+        /* Dots layout for each face using top and left */
+        .face-1 .dot:nth-child(1) { top: 4.5px; left: 4.5px; } /* Center dot */
+
+        .face-3 .dot:nth-child(1) { top: 2.5px; left: 2.5px; }
+        .face-3 .dot:nth-child(2) { bottom: 2.5px; right: 2.5px; }
+
+        .face-2 .dot:nth-child(1) { top: 2.5px; left: 2.5px; }
+        .face-2 .dot:nth-child(2) { top: 4.5px; left: 4.5px; }
+        .face-2 .dot:nth-child(3) { bottom: 2.5px; right: 2.5px; }
+
+        .face-5 .dot:nth-child(1) { top: 2.5px; left: 2.5px; }
+        .face-5 .dot:nth-child(2) { top: 2.5px; right: 2.5px; }
+        .face-5 .dot:nth-child(3) { bottom: 2.5px; left: 2.5px; }
+        .face-5 .dot:nth-child(4) { bottom: 2.5px; right: 2.5px; }
+
+        .face-4 .dot:nth-child(1) { top: 2.5px; left: 2.5px; }
+        .face-4 .dot:nth-child(2) { top: 2.5px; right: 2.5px; }
+        .face-4 .dot:nth-child(3) { top: 4.5px; left: 4.5px; }
+        .face-4 .dot:nth-child(4) { bottom: 2.5px; left: 2.5px; }
+        .face-4 .dot:nth-child(5) { bottom: 2.5px; right: 2.5px; }
+
+        .face-6 .dot:nth-child(1) { top: 2.5px; left: 2.5px; }
+        .face-6 .dot:nth-child(2) { top: 2.5px; right: 2.5px; }
+        .face-6 .dot:nth-child(3) { top: 4.5px; left: 2.5px; }
+        .face-6 .dot:nth-child(4) { top: 4.5px; right: 2.5px; }
+        .face-6 .dot:nth-child(5) { bottom: 2.5px; left: 2.5px; }
+        .face-6 .dot:nth-child(6) { bottom: 2.5px; right: 2.5px; }
+
+        /* Keyframes for each dice rotation */
+        @keyframes rotateTo1 {
+            0% { transform: rotateY(0deg) rotateX(0deg); }
+            100% { transform: rotateY(360deg) rotateX(0deg); }
+        }
+
+        @keyframes rotateTo2 {
+            0% { transform: rotateY(0deg) rotateX(0deg); }
+            100% { transform: rotateY(90deg) rotateX(0deg); }
+        }
+
+        @keyframes rotateTo3 {
+            0% { transform: rotateY(0deg) rotateX(0deg); }
+            100% { transform: rotateX(90deg) rotateY(0deg); }
+        }
+
+        @keyframes rotateTo4 {
+            0% { transform: rotateY(0deg) rotateX(0deg); }
+            100% { transform: rotateX(-90deg) rotateY(0deg); }
+        }
+
+        @keyframes rotateTo5 {
+            0% { transform: rotateY(0deg) rotateX(0deg); }
+            100% { transform: rotateY(-90deg) rotateX(0deg); }
+        }
+
+        @keyframes rotateTo6 {
+            0% { transform: rotateY(0deg) rotateX(0deg); }
+            100% { transform: rotateY(180deg) rotateX(0deg); }
+        }
+
+        /* Apply the animations */
+        .rotateTo1 { animation: rotateTo1 2s forwards; }
+        .rotateTo2 { animation: rotateTo2 2s forwards; }
+        .rotateTo3 { animation: rotateTo3 2s forwards; }
+        .rotateTo4 { animation: rotateTo4 2s forwards; }
+        .rotateTo5 { animation: rotateTo5 2s forwards; }
+        .rotateTo6 { animation: rotateTo6 2s forwards; }
+
+    </style>
+</head>
+<body>
+    <div class="grid" id="grid"></div>
+
+    <script>
+        // Original random matrix
+        const randomMatrix = [
+            [6, 2, 2, 4, 1, 6, 4, 6, 3, 1],
+            [1, 5, 5, 1, 3, 5, 5, 2, 3, 3],
+            [2, 4, 1, 1, 3, 3, 5, 5, 1, 5],
+            [4, 1, 5, 5, 1, 2, 4, 6, 3, 6],
+            [6, 3, 4, 5, 1, 3, 2, 5, 2, 6],
+            [6, 2, 5, 6, 1, 1, 3, 4, 3, 5],
+            [5, 2, 4, 4, 4, 5, 5, 3, 6, 5],
+            [3, 3, 6, 5, 1, 1, 3, 5, 2, 1],
+            [4, 5, 1, 3, 2, 6, 3, 6, 4, 4],
+            [1, 3, 4, 3, 3, 5, 4, 2, 2, 4]
+        ];
+
+        // Function to get animation class based on dice number
+        function getAnimationClass(num) {
+            switch(num) {
+                case 1: return 'rotateTo1';
+                case 2: return 'rotateTo2';
+                case 3: return 'rotateTo3';
+                case 4: return 'rotateTo4';
+                case 5: return 'rotateTo5';
+                case 6: return 'rotateTo6';
+                default: return '';
+            }
+        }
+
+        // Create the grid and populate it with animated dice
+        const gridContainer = document.getElementById('grid');
+        for (let i = 0; i < randomMatrix.length; i++) {
+            for (let j = 0; j < randomMatrix[i].length; j++) {
+                const cell = document.createElement('div');
+                const diceNumber = randomMatrix[i][j];
+                cell.className = 'cell ' + getAnimationClass(diceNumber);
+                const faces = [1, 2, 3, 4, 5, 6];
+                faces.forEach(face => {
+                    const diceFace = document.createElement('div');
+                    diceFace.className = 'face face-' + face;
+                    const dotsCount = face === 1 ? 1 : face === 2 ? 3 : face === 3 ? 2 : face === 4 ? 5 : face === 5 ? 4 : 6;
+                    for (let k = 0; k < dotsCount; k++) {
+                        const dot = document.createElement('div');
+                        dot.className = 'dot';
+                        diceFace.appendChild(dot);
+                    }
+                    cell.appendChild(diceFace);
+                });
+                gridContainer.appendChild(cell);
+            }
+        }
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dice Rotation Grid</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: white;
+            margin: 0;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(10, 10px);
+            grid-template-rows: repeat(10, 10px);
+            gap: 0.1px;
+        }
+
+        .cell {
+            position: relative;
+            width: 10px;
+            height: 10px;
+            transform-style: preserve-3d;
+            animation-duration: 2s;
+            animation-fill-mode: forwards;
+        }
+
+        .face {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: black;
+            border: 1 solid white;
+        }
+
+        .dot {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            background-color: white;
+            border-radius: 100%;
+        }
+
+        /* Dice faces positioning */
+        .face-1 { transform: rotateY(0deg) translateZ(3px); }   /* Front */
+        .face-6 { transform: rotateY(180deg) translateZ(3px); } /* Back */
+        .face-2 { transform: rotateY(90deg) translateZ(3px); }  /* Right */
+        .face-5 { transform: rotateY(-90deg) translateZ(3px); } /* Left */
+        .face-3 { transform: rotateX(90deg) translateZ(3px); }  /* Top */
+        .face-4 { transform: rotateX(-90deg) translateZ(3px); } /* Bottom */
+
+        /* Dots layout for each face using top and left */
+        .face-1 .dot:nth-child(1) { top: 4.5px; left: 4.5px; } /* Center dot */
+
+        .face-3 .dot:nth-child(1) { top: 2.5px; left: 2.5px; }
+        .face-3 .dot:nth-child(2) { bottom: 2.5px; right: 2.5px; }
+
+        .face-2 .dot:nth-child(1) { top: 2.5px; left: 2.5px; }
+        .face-2 .dot:nth-child(2) { top: 4.5px; left: 4.5px; }
+        .face-2 .dot:nth-child(3) { bottom: 2.5px; right: 2.5px; }
+
+        .face-5 .dot:nth-child(1) { top: 2.5px; left: 2.5px; }
+        .face-5 .dot:nth-child(2) { top: 2.5px; right: 2.5px; }
+        .face-5 .dot:nth-child(3) { bottom: 2.5px; left: 2.5px; }
+        .face-5 .dot:nth-child(4) { bottom: 2.5px; right: 2.5px; }
+
+        .face-4 .dot:nth-child(1) { top: 2.5px; left: 2.5px; }
+        .face-4 .dot:nth-child(2) { top: 2.5px; right: 2.5px; }
+        .face-4 .dot:nth-child(3) { top: 4.5px; left: 4.5px; }
+        .face-4 .dot:nth-child(4) { bottom: 2.5px; left: 2.5px; }
+        .face-4 .dot:nth-child(5) { bottom: 2.5px; right: 2.5px; }
+
+        .face-6 .dot:nth-child(1) { top: 2.5px; left: 2.5px; }
+        .face-6 .dot:nth-child(2) { top: 2.5px; right: 2.5px; }
+        .face-6 .dot:nth-child(3) { top: 4.5px; left: 2.5px; }
+        .face-6 .dot:nth-child(4) { top: 4.5px; right: 2.5px; }
+        .face-6 .dot:nth-child(5) { bottom: 2.5px; left: 2.5px; }
+        .face-6 .dot:nth-child(6) { bottom: 2.5px; right: 2.5px; }
+
+        /* Keyframes for each dice rotation */
+        @keyframes rotateTo1 {
+            0% { transform: rotateY(0deg) rotateX(0deg); }
+            100% { transform: rotateY(360deg) rotateX(0deg); }
+        }
+
+        @keyframes rotateTo2 {
+            0% { transform: rotateY(0deg) rotateX(0deg); }
+            100% { transform: rotateY(90deg) rotateX(0deg); }
+        }
+
+        @keyframes rotateTo3 {
+            0% { transform: rotateY(0deg) rotateX(0deg); }
+            100% { transform: rotateX(90deg) rotateY(0deg); }
+        }
+
+        @keyframes rotateTo4 {
+            0% { transform: rotateY(0deg) rotateX(0deg); }
+            100% { transform: rotateX(-90deg) rotateY(0deg); }
+        }
+
+        @keyframes rotateTo5 {
+            0% { transform: rotateY(0deg) rotateX(0deg); }
+            100% { transform: rotateY(-90deg) rotateX(0deg); }
+        }
+
+        @keyframes rotateTo6 {
+            0% { transform: rotateY(0deg) rotateX(0deg); }
+            100% { transform: rotateY(180deg) rotateX(0deg); }
+        }
+
+        /* Apply the animations */
+        .rotateTo1 { animation: rotateTo1 2s forwards; }
+        .rotateTo2 { animation: rotateTo2 2s forwards; }
+        .rotateTo3 { animation: rotateTo3 2s forwards; }
+        .rotateTo4 { animation: rotateTo4 2s forwards; }
+        .rotateTo5 { animation: rotateTo5 2s forwards; }
+        .rotateTo6 { animation: rotateTo6 2s forwards; }
+
+    </style>
+</head>
+<body>
+    <div class="grid" id="grid"></div>
+
+    <script>
+        // Original random matrix
+        const randomMatrix = [
+            [6, 2, 2, 4, 1, 6, 4, 6, 3, 1],
+            [1, 5, 5, 1, 3, 5, 5, 2, 3, 3],
+            [2, 4, 1, 1, 3, 3, 5, 5, 1, 5],
+            [4, 1, 5, 5, 1, 2, 4, 6, 3, 6],
+            [6, 3, 4, 5, 1, 3, 2, 5, 2, 6],
+            [6, 2, 5, 6, 1, 1, 3, 4, 3, 5],
+            [5, 2, 4, 4, 4, 5, 5, 3, 6, 5],
+            [3, 3, 6, 5, 1, 1, 3, 5, 2, 1],
+            [4, 5, 1, 3, 2, 6, 3, 6, 4, 4],
+            [1, 3, 4, 3, 3, 5, 4, 2, 2, 4]
+        ];
+
+        // Function to get animation class based on dice number
+        function getAnimationClass(num) {
+            switch(num) {
+                case 1: return 'rotateTo1';
+                case 2: return 'rotateTo2';
+                case 3: return 'rotateTo3';
+                case 4: return 'rotateTo4';
+                case 5: return 'rotateTo5';
+                case 6: return 'rotateTo6';
+                default: return '';
+            }
+        }
+
+        // Create the grid and populate it with animated dice
+        const gridContainer = document.getElementById('grid');
+        for (let i = 0; i < randomMatrix.length; i++) {
+            for (let j = 0; j < randomMatrix[i].length; j++) {
+                const cell = document.createElement('div');
+                const diceNumber = randomMatrix[i][j];
+                cell.className = 'cell ' + getAnimationClass(diceNumber);
+                const faces = [1, 2, 3, 4, 5, 6];
+                faces.forEach(face => {
+                    const diceFace = document.createElement('div');
+                    diceFace.className = 'face face-' + face;
+                    const dotsCount = face === 1 ? 1 : face === 2 ? 3 : face === 3 ? 2 : face === 4 ? 5 : face === 5 ? 4 : 6;
+                    for (let k = 0; k < dotsCount; k++) {
+                        const dot = document.createElement('div');
+                        dot.className = 'dot';
+                        diceFace.appendChild(dot);
+                    }
+                    cell.appendChild(diceFace);
+                });
+                gridContainer.appendChild(cell);
+            }
+        }
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image to Grayscale Dice Portrait</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+    #outputCanvas {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Image to Grayscale Dice Portrait</h1>
+  <input type="file" id="upload" accept="image/*">
+  <br><br>
+  <label for="width">Width (pixels): </label>
+  <input type="number" id="width" value="100" min="1">
+  <label for="height">Height (pixels): </label>
+  <input type="number" id="height" value="100" min="1">
+  <br><br>
+  <button id="process">Process Image</button>
+  <button id="save" style="display:none;">Save Image</button>
+  <br><br>
+  <canvas id="outputCanvas"></canvas>
+
+  <script>
+    const upload = document.getElementById('upload');
+    const processButton = document.getElementById('process');
+    const saveButton = document.getElementById('save');
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const outputCanvas = document.getElementById('outputCanvas');
+    const outputCtx = outputCanvas.getContext('2d');
+
+    let inputImage = null;
+    const diceImages = {}; // To cache dice images (1.png to 6.png)
+
+    // Preload dice images
+    for (let i = 1; i <= 6; i++) {
+      const img = new Image();
+      img.src = `${i}.png`;
+      diceImages[i] = img;
+    }
+
+    upload.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          inputImage = new Image();
+          inputImage.src = event.target.result;
+          inputImage.onload = () => {
+            alert('Image uploaded successfully.');
+          };
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    processButton.addEventListener('click', async () => {
+      if (!inputImage) {
+        alert('Please upload an image first.');
+        return;
+      }
+
+      const width = parseInt(document.getElementById('width').value);
+      const height = parseInt(document.getElementById('height').value);
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(inputImage, 0, 0, width, height);
+
+      const imageData = ctx.getImageData(0, 0, width, height);
+      const pixels = imageData.data;
+
+      const grayscale = [];
+      for (let i = 0; i < pixels.length; i += 4) {
+        const r = pixels[i];
+        const g = pixels[i + 1];
+        const b = pixels[i + 2];
+        const gray = Math.round((r + g + b) / 3);
+        grayscale.push(gray);
+      }
+
+      // Set output canvas dimensions
+      const diceSize = 16; // Assuming dice images are 16x16 pixels
+      outputCanvas.width = width * diceSize;
+      outputCanvas.height = height * diceSize;
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const gray = grayscale[y * width + x];
+          const group = Math.floor(gray / 43); // Divide 0-255 into 6 groups
+          const num = group + 1; // Map to 1-6
+          const img = diceImages[num];
+
+          await new Promise((resolve) => {
+            img.onload = () => {
+              outputCtx.drawImage(img, x * diceSize, y * diceSize, diceSize, diceSize);
+              resolve();
+            };
+          });
+        }
+      }
+
+      alert('Processing complete!');
+      saveButton.style.display = 'inline';
+    });
+
+    saveButton.addEventListener('click', () => {
+      const link = document.createElement('a');
+      link.download = 'output.png';
+      link.href = outputCanvas.toDataURL();
+      link.click();
+    });
+  </script>
+</body>
+</html> -->
+
+
+
+
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PyScript Image Processing</title>
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css">
+    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 20px;
+        }
+        input {
+            margin: 10px;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Grayscale and Resize with PyScript</h1>
+    <p>Select an image file:</p>
+    <input type="file" id="imageInput" accept="image/*" />
+
+    <div>
+        <h2>Original Image</h2>
+        <canvas id="originalCanvas"></canvas>
+    </div>
+
+    <div>
+        <h2>Processed Image</h2>
+        <canvas id="processedCanvas" width="100" height="100"></canvas>
+    </div>
+
+    <!-- Include the Pillow library -->
+    <!-- <py-env>
+    - pillow
+    </py-env>
+
+    <py-script>
+        from js import document
+        from PIL import Image, ImageOps
+        import io
+        await micropip.install("pillow") 
+        def process_image(event):
+            file_input = document.getElementById("imageInput")
+            file = file_input.files[0]
+            if not file:
+                print("No file selected.")
+                return
+            
+            # Read file as bytes
+            file_reader = io.BytesIO(file.arrayBuffer().to_py())
+            image = Image.open(file_reader)
+
+            # Display original image
+            original_canvas = document.getElementById("originalCanvas")
+            original_canvas.width, original_canvas.height = image.size
+            original_ctx = original_canvas.getContext("2d")
+            original_ctx.drawImage(file, 0, 0, image.width, image.height)
+
+            # Process image: Grayscale and Resize
+            grayscale_image = ImageOps.grayscale(image)
+            resized_image = grayscale_image.resize((100, 100))
+
+            # Display processed image
+            processed_canvas = document.getElementById("processedCanvas")
+            processed_ctx = processed_canvas.getContext("2d")
+            processed_ctx.putImageData(resized_image.tobytes(), 0, 0)
+        
+        document.getElementById("imageInput").addEventListener("change", process_image)
+    </py-script> -->
+<!-- </body>
+</html> --> 
+
+
+
+
+
+<!-- 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Cutter and PDF Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 20px;
+        }
+        #canvas {
+            border: 1px solid #000;
+            margin-top: 20px;
+        }
+        .part {
+            display: inline-block;
+            margin: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #saveBtn {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Image Cutter and PDF Generator</h1>
+<input type="file" id="imageInput" accept="image/*">
+<br><br>
+<canvas id="canvas" width="100" height="100"></canvas>
+<br><br>
+<button id="cutBtn">Cut Image</button>
+<button id="saveBtn" style="display: none;">Save as PDF</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const imageInput = document.getElementById('imageInput');
+    const cutBtn = document.getElementById('cutBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    let image = new Image();
+    let parts = [];
+
+    // Load the image when selected
+    imageInput.addEventListener('change', (e) => {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            image.onload = function() {
+                // Resize the image to 100x100
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(image, 0, 0, 100, 100);
+            };
+            image.src = event.target.result;
+        };
+        reader.readAsDataURL(e.target.files[0]);
+    });
+
+    // Function to cut the image into 10x10 parts
+    cutBtn.addEventListener('click', () => {
+        const rows = 10; // 10 parts vertically
+        const cols = 10; // 10 parts horizontally
+        const width = canvas.width / cols;
+        const height = canvas.height / rows;
+        parts = []; // Clear previous parts
+
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const x = col * width;
+                const y = row * height;
+                const imageData = ctx.getImageData(x, y, width, height);
+                parts.push({ x, y, imageData });
+                const partCanvas = document.createElement('canvas');
+                partCanvas.width = width;
+                partCanvas.height = height;
+                const partCtx = partCanvas.getContext('2d');
+                partCtx.putImageData(imageData, 0, 0);
+
+                const partImg = new Image();
+                partImg.src = partCanvas.toDataURL();
+                partImg.onload = () => {
+                    const partDiv = document.createElement('div');
+                    partDiv.classList.add('part');
+                    partDiv.appendChild(partImg);
+                    document.body.appendChild(partDiv);
+                };
+            }
+        }
+        saveBtn.style.display = 'inline-block';
+    });
+
+    // Function to generate and download the PDF
+    saveBtn.addEventListener('click', () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        parts.forEach((part, index) => {
+            const imgData = part.imageData;
+            const imgCanvas = document.createElement('canvas');
+            imgCanvas.width = imgData.width;
+            imgCanvas.height = imgData.height;
+            const imgCtx = imgCanvas.getContext('2d');
+            imgCtx.putImageData(imgData, 0, 0);
+            const imgSrc = imgCanvas.toDataURL();
+
+            if (index > 0) doc.addPage(); // Add a new page for each image part
+            doc.addImage(imgSrc, 'PNG', 10, 10, 180, 180);
+        });
+
+        doc.save('image-parts.pdf');
+    });
+</script>
+
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bindi Portrait Maker</title>
+    <style>
+        /* Add some basic CSS for the page layout */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+
+        .header {
+            background-color: #f8f8f8;
+            padding: 20px;
+        }
+
+        .header img {
+            max-width: 100px;
+        }
+
+        #controls {
+            margin: 20px 0;
+        }
+
+        #outputCanvas {
+            margin-top: 20px;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            background-color: #f8f8f8;
+            padding: 10px 0;
+        }
+
+        button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <img src="ccllogo.jpg" alt="CCL Logo">
+    <h1>CCL : Bindi Portrait Maker</h1>
+</div>
+
+<div id="controls">
+    <input type="file" id="imageInput" accept="image/*">
+    <br>
+    <label for="widthInput">Width:</label>
+    <input type="number" id="widthInput" value="50" min="1" step="1">
+    <label for="heightInput">Height:</label>
+    <input type="number" id="heightInput" value="50" min="1" step="1">
+    <br>
+    <button id="makeMosaicButton">Make Bindi Art</button>
+</div>
+
+<br>
+<canvas id="outputCanvas"></canvas>
+<br>
+<button id="downloadButton" style="display:none;">Download Image</button>
+<button id="downloadPDFButton" style="display:none;">Download PDF</button>
+
+<div class="footer">
+    <p>© 2024 Center for Creative Learning, IIT Gandhinagar</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+    let numDiceWide = 50;
+    let numDiceTall = 50;
+
+    const diceImages = {
+        1: "BINDI/5.png",
+        2: "BINDI/4.png",
+        3: "BINDI/3.png",
+        4: "BINDI/2.png",
+        5: "BINDI/1.png",
+    };
+
+    const outputCanvas = document.getElementById('outputCanvas');
+    const ctx = outputCanvas.getContext('2d');
+    const downloadButton = document.getElementById('downloadButton');
+    const downloadPDFButton = document.getElementById('downloadPDFButton');
+
+    function greyscaleToDiceValue(val) {
+        if (val < 51) return 1;
+        else if (val < 102) return 2;
+        else if (val < 153) return 3;
+        else if (val < 204) return 4;
+        return 5;
+    }
+
+    async function drawDiceImage(pixels, diceWidth, diceHeight) {
+        const outputWidth = diceWidth * numDiceWide;
+        const outputHeight = diceHeight * numDiceTall;
+        outputCanvas.width = outputWidth;
+        outputCanvas.height = outputHeight;
+
+        for (let i = 0; i < pixels.length; i++) {
+            const grayscaleValue = pixels[i];
+            const diceValue = greyscaleToDiceValue(grayscaleValue);
+            const x = (i % numDiceWide) * diceWidth;
+            const y = Math.floor(i / numDiceWide) * diceHeight;
+
+            const img = new Image();
+            img.src = diceImages[diceValue];
+
+            await new Promise(resolve => {
+                img.onload = () => {
+                    ctx.drawImage(img, x, y, diceWidth, diceHeight);
+                    resolve();
+                };
+            });
+        }
+
+        downloadButton.style.display = 'inline-block';
+        downloadPDFButton.style.display = 'inline-block'; // Show the PDF download button
+    }
+
+    document.getElementById('makeMosaicButton').addEventListener('click', function () {
+        const file = document.getElementById('imageInput').files[0];
+        if (file) {
+            numDiceWide = parseInt(document.getElementById('widthInput').value, 10);
+            numDiceTall = parseInt(document.getElementById('heightInput').value, 10);
+
+            const img = new Image();
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                img.src = e.target.result;
+                img.onload = function () {
+                    const offscreenCanvas = document.createElement('canvas');
+                    const offscreenCtx = offscreenCanvas.getContext('2d');
+                    offscreenCanvas.width = numDiceWide;
+                    offscreenCanvas.height = numDiceTall;
+                    offscreenCtx.drawImage(img, 0, 0, numDiceWide, numDiceTall);
+
+                    const imageData = offscreenCtx.getImageData(0, 0, numDiceWide, numDiceTall);
+                    const pixels = [];
+                    for (let i = 0; i < imageData.data.length; i += 4) {
+                        const r = imageData.data[i];
+                        const g = imageData.data[i + 1];
+                        const b = imageData.data[i + 2];
+                        const grayscaleValue = Math.floor((r + g + b) / 3);
+                        pixels.push(grayscaleValue);
+                    }
+
+                    const diceImage = new Image();
+                    diceImage.src = diceImages[1];
+                    diceImage.onload = function () {
+                        const diceWidth = diceImage.width;
+                        const diceHeight = diceImage.height;
+                        drawDiceImage(pixels, diceWidth, diceHeight);
+                    };
+                };
+            };
+            reader.readAsDataURL(file);
+        } else {
+            alert("Please select an image file.");
+        }
+    });
+
+    downloadButton.addEventListener('click', function () {
+        const link = document.createElement('a');
+        link.download = 'dice_output.png';
+        link.href = outputCanvas.toDataURL('image/png');
+        link.click();
+    });
+
+    downloadPDFButton.addEventListener('click', function () {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
+
+        const canvasWidth = outputCanvas.width;
+        const canvasHeight = outputCanvas.height;
+        const cutSize = 10; // 10x10 pixel cuts
+
+        for (let y = 0; y < canvasHeight; y += cutSize) {
+            for (let x = 0; x < canvasWidth; x += cutSize) {
+                const imgData = outputCanvas.toDataURL('image/png', x, y, cutSize, cutSize);
+                pdf.addImage(imgData, 'PNG', 10, 10, 30, 30);
+                if ((x / cutSize + 1) % 5 === 0) {
+                    pdf.addPage();
+                }
+            }
+        }
+
+        pdf.save('dice_output.pdf');
+    });
+</script>
+
+</body>
+</html>
