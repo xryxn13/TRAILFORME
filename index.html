@@ -3,122 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Cutter and PDF Generator</title>
+    <title>Image Splitter to PDF</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
         }
-        #canvas {
+        canvas {
             border: 1px solid #000;
-            margin-top: 20px;
+            margin-bottom: 20px;
         }
-        .part {
-            display: inline-block;
-            margin: 10px;
-        }
-        button {
-            padding: 10px 15px;
+        #downloadBtn {
+            padding: 10px 20px;
             background-color: #4CAF50;
             color: white;
             border: none;
             cursor: pointer;
-            font-size: 16px;
         }
-        button:hover {
+        #downloadBtn:hover {
             background-color: #45a049;
-        }
-        #saveBtn {
-            margin-top: 20px;
         }
     </style>
 </head>
 <body>
 
-<h1>Image Cutter and PDF Generator</h1>
+<h2>Cut Image into 10x10 Pixel Parts</h2>
 <input type="file" id="imageInput" accept="image/*">
-<br><br>
-<canvas id="canvas" width="100" height="100"></canvas>
-<br><br>
-<button id="cutBtn">Cut Image</button>
-<button id="saveBtn" style="display: none;">Save as PDF</button>
+<canvas id="canvas"></canvas>
+<button id="downloadBtn">Download PDF</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const imageInput = document.getElementById('imageInput');
-    const cutBtn = document.getElementById('cutBtn');
-    const saveBtn = document.getElementById('saveBtn');
+    const imageInput = document.getElementById("imageInput");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const downloadBtn = document.getElementById("downloadBtn");
     let image = new Image();
-    let parts = [];
+    let imgParts = [];
 
-    // Load the image when selected
-    imageInput.addEventListener('change', (e) => {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            image.onload = function() {
-                // Resize the image to 100x100
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(image, 0, 0, 100, 100);
+    // Handle image selection and loading
+    imageInput.addEventListener("change", function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                image.onload = function() {
+                    // Set canvas size based on image dimensions
+                    canvas.width = image.width;
+                    canvas.height = image.height;
+                    // Draw the image on the canvas
+                    ctx.drawImage(image, 0, 0);
+                    // Split the image into 10x10 pixel parts
+                    splitImageIntoParts(image.width, image.height, 10);
+                };
+                image.src = e.target.result;
             };
-            image.src = event.target.result;
-        };
-        reader.readAsDataURL(e.target.files[0]);
+            reader.readAsDataURL(file);
+        }
     });
 
-    // Function to cut the image into 10x10 parts
-    cutBtn.addEventListener('click', () => {
-        const rows = 10; // 10 parts vertically
-        const cols = 10; // 10 parts horizontally
-        const width = canvas.width / cols;
-        const height = canvas.height / rows;
-        parts = []; // Clear previous parts
-
-        for (let row = 0; row < rows; row++) {
-            for (let col = 0; col < cols; col++) {
-                const x = col * width;
-                const y = row * height;
-                const imageData = ctx.getImageData(x, y, width, height);
-                parts.push({ x, y, imageData });
-                const partCanvas = document.createElement('canvas');
-                partCanvas.width = width;
-                partCanvas.height = height;
-                const partCtx = partCanvas.getContext('2d');
-                partCtx.putImageData(imageData, 0, 0);
-
-                const partImg = new Image();
-                partImg.src = partCanvas.toDataURL();
-                partImg.onload = () => {
-                    const partDiv = document.createElement('div');
-                    partDiv.classList.add('part');
-                    partDiv.appendChild(partImg);
-                    document.body.appendChild(partDiv);
-                };
+    // Function to split the image into parts
+    function splitImageIntoParts(imageWidth, imageHeight, partSize) {
+        imgParts = [];
+        for (let y = 0; y < imageHeight; y += partSize) {
+            for (let x = 0; x < imageWidth; x += partSize) {
+                const partCanvas = document.createElement("canvas");
+                const partCtx = partCanvas.getContext("2d");
+                partCanvas.width = partSize;
+                partCanvas.height = partSize;
+                partCtx.drawImage(canvas, x, y, partSize, partSize, 0, 0, partSize, partSize);
+                imgParts.push(partCanvas);
             }
         }
-        saveBtn.style.display = 'inline-block';
-    });
+    }
 
     // Function to generate and download the PDF
-    saveBtn.addEventListener('click', () => {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        parts.forEach((part, index) => {
-            const imgData = part.imageData;
-            const imgCanvas = document.createElement('canvas');
-            imgCanvas.width = imgData.width;
-            imgCanvas.height = imgData.height;
-            const imgCtx = imgCanvas.getContext('2d');
-            imgCtx.putImageData(imgData, 0, 0);
-            const imgSrc = imgCanvas.toDataURL();
+    downloadBtn.addEventListener("click", function() {
+        if (imgParts.length > 0) {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            let x = 10, y = 10;
 
-            if (index > 0) doc.addPage(); // Add a new page for each image part
-            doc.addImage(imgSrc, 'PNG', 10, 10, 180, 180);
-        });
+            imgParts.forEach((partCanvas, index) => {
+                const imgData = partCanvas.toDataURL("image/png");
+                pdf.addImage(imgData, "PNG", x, y, 10, 10);
+                x += 12; // Move to the next position
+                if (x > 180) { // New line if it exceeds page width
+                    x = 10;
+                    y += 12;
+                }
+                if (index % 50 === 0 && index !== 0) { // Add new page after 50 images
+                    pdf.addPage();
+                    x = 10;
+                    y = 10;
+                }
+            });
 
-        doc.save('image-parts.pdf');
+            pdf.save("image-parts.pdf");
+        }
     });
 </script>
 
